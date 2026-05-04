@@ -1,11 +1,68 @@
 # Hootbu Daily Report Skill
 
-A small Claude Code skill that takes the noisiest part of your day — your git history — and turns it into a calm, readable daily work report. Defaults to Turkish, switches to English with a flag.
+Your day's git commits, turned into a clean work report ready to send to a manager or client. A Claude Code skill — Turkish by default, English with `-en`.
 
-[Türkçe](#türkçe) · [English](#english)
-
+[![npm](https://img.shields.io/npm/v/hootbu-report-skill?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/hootbu-report-skill)
+[![npm downloads](https://img.shields.io/npm/dm/hootbu-report-skill?color=3a7af0)](https://www.npmjs.com/package/hootbu-report-skill)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-7C3AED)](https://claude.ai/code)
+
+## Quick start
+
+```bash
+npm install -g hootbu-report-skill
+hootbu-report-skill install
+```
+
+Open Claude Code in any git repo and run `/report`. That's it.
+
+> Read on for full docs: [Türkçe](#türkçe) · [English](#english)
+
+---
+
+## What it does
+
+Skim of a typical run:
+
+```
+$ /report
+> İsminizi seçin: John Doe
+> Şirket adını seçin: Acme Corp
+> Proje adını seçin: Demo Project
+> Hangi commit'ler rapora dahil edilsin? Bugün
+
+[reads today's 12 commits, groups them, writes the report]
+```
+
+You get back, ready to copy:
+
+```
+John Doe (30.04.26)
+Acme Corp:
+
+Demo Project:
+Raporlama modülü yeniden yapılandırıldı. PDF üretim servisine parametrik veri akışı, cache invalidation stratejisi ve hata toleranslı işleme mekanizması eklendi.
+
+Abonelik ve kredi yönetimi altyapısı geliştirildi. Plan tanımlama ekranı yeniden tasarlanarak esnek hak tanımlama desteği eklendi.
+
+Talep listesi gelişmiş filtreleme, durum bazlı segmentasyon ve server-side pagination desteği ile yeniden kurgulandı.
+```
+
+Or in English with `/report -en`:
+
+```
+John Doe (30.04.26)
+Acme Corp:
+
+Demo Project:
+The reporting module was rebuilt. The PDF generation service now supports parametric data flow, cache invalidation, and fault-tolerant processing.
+
+The subscription and credit management layer was extended. The plan editor was redesigned around card-based forms.
+
+The ticket list was reworked with advanced filtering, status-based segmentation, and server-side pagination.
+```
+
+For the truly lazy: `/report --direkt` skips every question and writes today's report straight to `~/Desktop/rapor.md`.
 
 ---
 
