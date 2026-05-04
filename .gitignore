@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Skill installation symlink (created locally during install)
+rapor-skill
+
+# Local user preferences (not part of the skill itself)
+rapor-preferences.json
+
+# Editor
+.vscode/
+.idea/
