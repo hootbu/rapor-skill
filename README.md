@@ -3,7 +3,6 @@
 Your day's git commits, turned into a clean work report ready to send to a manager or client. A Claude Code skill — Turkish by default, English with `-en`.
 
 [![npm](https://img.shields.io/npm/v/hootbu-report-skill?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/hootbu-report-skill)
-[![npm downloads](https://img.shields.io/npm/dm/hootbu-report-skill?color=3a7af0)](https://www.npmjs.com/package/hootbu-report-skill)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-7C3AED)](https://claude.ai/code)
 
