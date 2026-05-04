@@ -22,8 +22,6 @@ git clone https://github.com/Hootbu/rapor-skill.git
 ln -s "$(pwd)/rapor-skill" ~/.claude/skills/report
 ```
 
-> Daha önce `rapor` adıyla kuruluysan, eski sembolik linki (`~/.claude/skills/rapor`) kaldırıp yukarıdaki yeni adla tekrar oluştur. Eski tercihlerin (`~/.claude/rapor-preferences.json`) ise yeni yola taşınmalı veya silinmeli; yeni dosya adı `~/.claude/report-preferences.json`.
-
 ### Kullanım
 
 Bir git deposunda Claude Code'u aç ve şunu yaz:
@@ -124,8 +122,6 @@ Answering "what did I get done today?" every evening is tiring, and your commit 
 git clone https://github.com/Hootbu/rapor-skill.git
 ln -s "$(pwd)/rapor-skill" ~/.claude/skills/report
 ```
-
-> If you previously installed this skill as `rapor`, remove the old symlink (`~/.claude/skills/rapor`) and recreate it with the new name above. Likewise, the preferences file moved from `~/.claude/rapor-preferences.json` to `~/.claude/report-preferences.json` — move or delete the old file.
 
 ### Use
 
