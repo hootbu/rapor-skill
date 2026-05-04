@@ -24,30 +24,16 @@ Open Claude Code in any git repo and run `/report`. That's it.
 Skim of a typical run:
 
 ```
-$ /report
-> İsminizi seçin: John Doe
-> Şirket adını seçin: Acme Corp
-> Proje adını seçin: Demo Project
-> Hangi commit'ler rapora dahil edilsin? Bugün
+$ /report -en
+> Pick your name: John Doe
+> Pick your company: Acme Corp
+> Pick your project: Demo Project
+> Which commits should the report cover? Today
 
 [reads today's 12 commits, groups them, writes the report]
 ```
 
 You get back, ready to copy:
-
-```
-John Doe (30.04.26)
-Acme Corp:
-
-Demo Project:
-Raporlama modülü yeniden yapılandırıldı. PDF üretim servisine parametrik veri akışı, cache invalidation stratejisi ve hata toleranslı işleme mekanizması eklendi.
-
-Abonelik ve kredi yönetimi altyapısı geliştirildi. Plan tanımlama ekranı yeniden tasarlanarak esnek hak tanımlama desteği eklendi.
-
-Talep listesi gelişmiş filtreleme, durum bazlı segmentasyon ve server-side pagination desteği ile yeniden kurgulandı.
-```
-
-Or in English with `/report -en`:
 
 ```
 John Doe (30.04.26)
@@ -61,7 +47,7 @@ The subscription and credit management layer was extended. The plan editor was r
 The ticket list was reworked with advanced filtering, status-based segmentation, and server-side pagination.
 ```
 
-For the truly lazy: `/report --direkt` skips every question and writes today's report straight to `~/Desktop/rapor.md`.
+Drop the `-en` for Turkish output (the default). For the truly lazy, `/report --direkt` skips every question and writes today's report straight to `~/Desktop/rapor.md`.
 
 ---
 
