@@ -17,9 +17,24 @@ Her akşam "bugün ne yaptım?" sorusunu cevaplamak yorucu. Üstelik commit mesa
 
 ### Kurulum
 
+NPM ile (önerilen):
+
+```bash
+npm install -g hootbu-report-skill
+hootbu-report-skill install
+```
+
+Kaynaktan:
+
 ```bash
 git clone https://github.com/Hootbu/rapor-skill.git
 ln -s "$(pwd)/rapor-skill" ~/.claude/skills/report
+```
+
+Kaldırmak için:
+
+```bash
+hootbu-report-skill uninstall
 ```
 
 ### Kullanım
@@ -118,9 +133,24 @@ Answering "what did I get done today?" every evening is tiring, and your commit 
 
 ### Install
 
+Via NPM (recommended):
+
+```bash
+npm install -g hootbu-report-skill
+hootbu-report-skill install
+```
+
+From source:
+
 ```bash
 git clone https://github.com/Hootbu/rapor-skill.git
 ln -s "$(pwd)/rapor-skill" ~/.claude/skills/report
+```
+
+To uninstall:
+
+```bash
+hootbu-report-skill uninstall
 ```
 
 ### Use

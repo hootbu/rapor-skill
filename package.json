@@ -1,0 +1,43 @@
+{
+  "name": "hootbu-report-skill",
+  "version": "1.0.0",
+  "description": "Turn your git commits into polished daily work reports — a Claude Code skill (Turkish by default, English with -en).",
+  "bin": {
+    "hootbu-report-skill": "bin/cli.js"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "bin/"
+  ],
+  "keywords": [
+    "claude-code",
+    "claude-skill",
+    "claude",
+    "skill",
+    "ai",
+    "git",
+    "commit",
+    "daily-report",
+    "report",
+    "productivity",
+    "developer-tools",
+    "turkish",
+    "automation",
+    "llm"
+  ],
+  "homepage": "https://github.com/Hootbu/rapor-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hootbu/rapor-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hootbu/rapor-skill/issues"
+  },
+  "author": "Emir Yorgun (https://github.com/Hootbu)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}
