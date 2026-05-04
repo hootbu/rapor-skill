@@ -1,28 +1,42 @@
 ---
-name: rapor
-description: Git commit'lerinden günlük iş raporu oluşturur. "/rapor" komutuyla tetiklenir. İsim, şirket, proje ve commit aralığını interaktif olarak sorar ve git geçmişini analiz ederek profesyonel Türkçe iş raporu üretir. "/rapor --direkt" ile hiç soru sormadan o günün raporunu oluşturur ve doğrudan ~/Desktop/rapor.md dosyasına kaydeder. Triggers on "/rapor", "/rapor --direkt", "rapor oluştur", "günlük rapor", "iş raporu".
+name: report
+description: Generates a daily work report from your git commit history. Triggered by "/report" (interactive) or "/report --direkt" (zero-question, auto-saves to ~/Desktop/rapor.md). Supports Turkish (default, or "-tr") and English ("-en") output. Flags can be combined freely (e.g. "/report -en --direkt"). Also triggers on "rapor oluştur", "günlük rapor", "iş raporu", "daily report", "work report", "generate report".
 ---
 
-# Günlük İş Raporu
+# Daily Report Skill
 
-Git commit geçmişini analiz ederek profesyonel, kopyalanabilir Türkçe iş raporu üretir. Tüm etkileşimler Türkçe yapılır.
+Reads your git commit history, groups commits thematically, and produces a polished, copy-paste-ready daily work report. Default output language is Turkish; pass `-en` to switch to English.
 
-## Modlar
+## Modes and Flags
 
-- **İnteraktif mod (`/rapor`)**: İsim, şirket, proje, commit aralığını sorar; rapor sonunda dosyaya kaydetmek isteyip istemediğini sorar.
-- **Direkt mod (`/rapor --direkt`)**: Hiçbir soru sormaz, kayıtlı tercihleri kullanır, bugünün commit'lerinden raporu üretir ve doğrudan `~/Desktop/rapor.md` dosyasına kaydeder.
+| Invocation | Language | Behavior |
+|---|---|---|
+| `/report` | Turkish (default) | Interactive — asks for name, company, project, commit range; ends with a save prompt |
+| `/report -tr` | Turkish (explicit) | Same as above |
+| `/report -en` | English | Same interactive flow, but the report content is written in English |
+| `/report --direkt` | Turkish | Zero questions; uses saved preferences; auto-saves to `~/Desktop/rapor.md` |
+| `/report -en --direkt` | English | Zero questions; uses saved preferences; auto-saves to `~/Desktop/rapor.md` |
+| `/report --direkt -tr` | Turkish | Same as `/report --direkt` |
 
-**Format her iki modda da AYNIDIR.** Direkt modda da başlık, şirket ve proje satırları yazılır — format asla bozulmaz.
+**Flag order does not matter.** `-en --direkt` and `--direkt -en` behave identically.
 
-## Tercih Dosyası
+**The output format is identical across all modes and languages.** Header, company line, project line are always written. Only the paragraph content language changes.
 
-Bu skill, kullanıcı bilgilerini `~/.claude/rapor-preferences.json` dosyasında saklar. Skill başlatıldığında bu dosyayı oku:
+## All interactions with the user are in Turkish
+
+Regardless of the report output language, ask questions and show messages **to the user** in Turkish. The `-en` flag only changes the **report content** that gets written into the code block / file.
+
+---
+
+## Preferences File
+
+User preferences are stored at `~/.claude/report-preferences.json`. On startup, read this file:
 
 ```bash
-cat ~/.claude/rapor-preferences.json 2>/dev/null || echo "{}"
+cat ~/.claude/report-preferences.json 2>/dev/null || echo "{}"
 ```
 
-Dosya formatı:
+Format:
 ```json
 {
   "isim": "John Doe",
@@ -31,280 +45,260 @@ Dosya formatı:
 }
 ```
 
-**Kaydetme kuralı (interaktif mod):** Tüm interaktif adımlar tamamlandıktan sonra (commit aralığı hariç) kullanıcının girdiği bilgileri bu dosyaya Write tool ile kaydet. Dosya yoksa oluştur. Bir sonraki çalıştırmada kayıtlı bilgiler ilk seçenek olarak sunulur.
+**Save rule (interactive mode only):** After all interactive steps are complete (excluding commit range), write the user's inputs to this file with the Write tool. Create the file if it does not exist. On subsequent runs, the saved values are offered as the first option.
 
-**Direkt mod:** Tercihleri okur ama yenisini kaydetmez. Eğer tercih dosyası yoksa veya eksikse, **"Direkt mod için önce `/rapor` komutuyla en az bir kez interaktif çalıştırma yapılmalı."** mesajıyla durdur.
+**`--direkt` mode:** Reads preferences but never writes them. If the file is missing or any of `isim`, `sirket`, `projeAdi` is empty, abort with: **"Direkt mod için önce `/report` komutuyla en az bir kez interaktif çalıştırma yapılmalı."**
 
 ---
 
-## İnteraktif Mod Adımları (`/rapor`)
+## Interactive Mode (`/report`)
 
-1. Tercihleri oku
-2. İsim girişi
-3. Şirket girişi
-4. Proje adı girişi
-5. Commit aralığı seçimi
-6. Tercihleri kaydet
-7. Git analizi ve gruplama
-8. Rapor çıktısı
-9. Dosyaya kaydetme onayı
+1. Check git repo
+2. Read preferences
+3. Ask for name
+4. Ask for company
+5. Ask for project name
+6. Ask for commit range
+7. Save preferences
+8. Analyze commits and group them
+9. Render the report
+10. Ask whether to save to file
 
-### Adım 0: Git Deposu Kontrolü
+### Step 0: Git repository check
 
-Her şeyden önce git deposu kontrolü yap:
 ```bash
 git rev-parse --is-inside-work-tree
 ```
-Git deposu değilse: **"Bu dizin bir git deposu değil. Lütfen bir git deposunda çalıştırın."** mesajıyla durdur.
+If not a git repo, abort with: **"Bu dizin bir git deposu değil. Lütfen bir git deposunda çalıştırın."**
 
-### Adım 1: İsim
+### Step 1: Name
 
-Tercih dosyasında kayıtlı `isim` varsa, AskUserQuestion ile sor:
+If `isim` exists in preferences, ask via AskUserQuestion:
 
 **Question:** "İsminizi seçin veya yeni girin:"
 **Options:**
-1. "{kayıtlı isim}" — Önceki tercih
+1. "{saved name}" — Önceki tercih
 2. "Yeni isim gir"
 
-Kullanıcı "Yeni isim gir" seçerse veya kayıtlı isim yoksa:
+If the user picks "Yeni isim gir" or no saved name exists:
 
 **Question:** "Adınızı ve soyadınızı yazın (örn: John Doe):"
-(Seçenek yok — serbest metin girişi)
+(Free-text input)
 
-### Adım 2: Şirket
+### Step 2: Company
 
-Tercih dosyasında kayıtlı `sirket` varsa, AskUserQuestion ile sor:
+If `sirket` exists, ask via AskUserQuestion:
 
 **Question:** "Şirket adını seçin veya yeni girin:"
 **Options:**
-1. "{kayıtlı şirket}" — Önceki tercih
+1. "{saved company}" — Önceki tercih
 2. "Yeni şirket adı gir"
 
-Kullanıcı "Yeni şirket adı gir" seçerse veya kayıtlı şirket yoksa:
+Otherwise:
 
 **Question:** "Şirket adını yazın (örn: Acme Corp):"
-(Seçenek yok — serbest metin girişi)
 
-### Adım 3: Proje Adı
+### Step 3: Project
 
-Tercih dosyasında kayıtlı `projeAdi` varsa, AskUserQuestion ile sor:
+If `projeAdi` exists, ask via AskUserQuestion:
 
 **Question:** "Proje adını seçin veya yeni girin:"
 **Options:**
-1. "{kayıtlı proje adı}" — Önceki tercih
+1. "{saved project}" — Önceki tercih
 2. "Yeni proje adı gir"
 
-Kullanıcı "Yeni proje adı gir" seçerse veya kayıtlı proje adı yoksa:
+Otherwise:
 
 **Question:** "Proje adını yazın (örn: Demo Project):"
-(Seçenek yok — serbest metin girişi)
 
-### Adım 4: Commit Aralığı
-
-AskUserQuestion ile sor:
+### Step 4: Commit range
 
 **Question:** "Hangi commit'ler rapora dahil edilsin?"
 **Options:**
 1. "Bugün" — Bugünkü commit'ler
 2. "Son N commit" — Belirli sayıda son commit
 
-**"Bugün" seçilirse:**
-- Bugünün tarihini al (YYYY-MM-DD formatında)
-- Şu komutu çalıştır:
+**If "Bugün":** get today's date in `YYYY-MM-DD`, then run:
 ```bash
 git log --after="YYYY-MM-DD 00:00" --before="YYYY-MM-DD 23:59" --oneline --no-merges
 ```
 
-**"Son N commit" seçilirse:**
-- Takip sorusu sor:
-  **Question:** "Kaç adet son commit dahil edilsin? (örn: 10):"
-  (Seçenek yok — serbest metin girişi)
-- Şu komutu çalıştır:
+**If "Son N commit":** ask the count via free-text input, then run:
 ```bash
 git log -N --oneline --no-merges
 ```
 
-### Adım 5: Tercihleri Kaydet
+### Step 5: Save preferences
 
-Tüm bilgiler toplandıktan sonra, commit aralığı hariç bilgileri `~/.claude/rapor-preferences.json` dosyasına Write tool ile yaz:
-
+Write to `~/.claude/report-preferences.json`:
 ```json
 {
-  "isim": "{girilen isim}",
-  "sirket": "{girilen şirket}",
-  "projeAdi": "{girilen proje adı}"
+  "isim": "{name}",
+  "sirket": "{company}",
+  "projeAdi": "{project}"
 }
 ```
 
-### Adım 6: Git Analizi
+### Step 6: Git analysis
 
-Commit bulunamazsa: **"Seçilen aralıkta hiçbir commit bulunamadı. Tarih veya commit sayısını kontrol edin."** mesajıyla durdur.
+If no commits found: **"Seçilen aralıkta hiçbir commit bulunamadı. Tarih veya commit sayısını kontrol edin."**
 
-Her commit hash'i için detaylı bilgi al:
+For each commit, get details:
 ```bash
 git show <hash> --stat --format="%H%n%s%n%b"
 ```
 
-Çok sayıda commit varsa, toplu analiz yap:
+For many commits, batch:
 ```bash
 git log -N --stat --no-merges --format="%H %s"
 ```
 
-#### Tematik Gruplama
+#### Thematic grouping
 
-İlgili commit'leri tematik olarak grupla:
+Group commits by:
 
-1. **Dizin/modül yakınlığı:** Aynı dizin veya modülü etkileyen commit'ler → aynı grup
-2. **Özellik alanı:** Commit mesajlarında benzer anahtar kelimeler → aynı grup
-3. **İlişkili değişiklikler:** Bir özelliğin implementasyonu + ilgili fix'ler → aynı grup
-4. **Bağımsız değişiklikler:** Config, dependency gibi farklı alanlardaki değişiklikler → ayrı grup
+1. **Directory/module proximity** — commits touching the same area
+2. **Feature surface** — commits whose messages share keywords
+3. **Related changes** — a feature implementation plus its follow-up fixes
+4. **Independent changes** — config, dependencies, etc., go in their own group
 
-**KRİTİK KURAL — Gruplama sınırı YOK:** Paragraf sayısının üst sınırı yoktur. Commit sayısı arttıkça paragraf sayısı da artar. 10, 15, 20+ paragraf da olabilir. **Asla yapay olarak az gruba sıkıştırma.** Alakasız işleri zorla aynı paragrafa toplama. Tematik bütünlük varsa birleştir, yoksa ayrı paragraf yaz.
+**CRITICAL — No grouping cap:** There is no upper limit on paragraph count. As commits grow, paragraphs grow. 10, 15, 20+ paragraphs are fine. **Never artificially compress unrelated work into a single paragraph.** If two changes are not thematically related, they get separate paragraphs.
 
-**KRİTİK KURAL — Eksiksizlik:** Hiçbir commit atlanmamalı veya özetlenirken kaybolmamalı. Gruplama sonrası her commit'in en az bir paragrafta açıkça temsil edildiğini doğrula. Rapor yazıldıktan sonra commit listesiyle karşılaştırarak eksik commit var mı kontrol et. Bağımsız küçük commit'ler (bugfix, tek satır değişiklik vb.) yakın gruba dahil edilebilir ancak paragraf içinde mutlaka anılmalı.
+**CRITICAL — Completeness:** No commit may be skipped or lost in summarization. After grouping, verify every commit is represented in at least one paragraph. Cross-check the final report against the commit list. Tiny commits (one-line fixes, bumps) can be folded into a related paragraph but must still be mentioned.
 
-#### Türkçe Özet Yazımı
+#### Paragraph writing — Turkish (default or `-tr`)
 
-Her grup için özlü, profesyonel bir Türkçe paragraf yaz:
+For each group, write a concise, professional Turkish paragraph:
 
-- **Edilgen çatı** kullan: "eklendi", "giderildi", "yeniden tasarlandı", "güçlendirildi"
-- **NE yapıldığını** anlat, NASIL yapıldığını değil
-- **Teknik jargon serbesttir:** cache invalidation, server-side pagination, constraint, migration, Edge Function, rollover, audit log gibi alan terimleri kullanılabilir
-- Fonksiyon adı, dosya adı, değişken adı, dosya yolu kullanma
-- Her paragraf **2-4 cümle** olsun, ilgili değişiklikleri akıcı cümlelerle birleştir
-- Paragraf sonlarına isim ekleme
-- Uzun tire/çizgi `—` (em dash) kullanma
-- Noktalı virgül `;` kullanma
+- **Edilgen çatı:** "eklendi", "giderildi", "yeniden tasarlandı", "güçlendirildi"
+- **Anlat ne yapıldığını,** nasıl yapıldığını değil
+- **Teknik jargon serbest:** cache invalidation, server-side pagination, constraint, migration, Edge Function, rollover, audit log
+- **Yasak:** fonksiyon adı, dosya adı, değişken adı, dosya yolu
+- **Her paragraf 2-4 cümle**
+- **Yasak:** uzun tire `—`, noktalı virgül `;`, paragraf sonunda isim
 
-**İyi örnekler:**
+**Good Turkish examples:**
 - "PDF oluşturma altyapısı güçlendirildi. Edge Function'a dinamik veri üretimi ve cache invalidation stratejisi eklendi. Büyük veri setlerinde oluşan timeout problemleri giderildi."
 - "Paket yönetimi arayüzü yeniden tasarlandı. Hizmet kalemi formları kart tabanlı layout ile modernize edildi, aylık saat ve rollover desteği eklendi."
-- "Rezervasyon sisteminde iki kritik düzeltme yapıldı. Mesai saatleri dışındaki zaman dilimleri devre dışı bırakıldı ve geçmiş tarihe rezervasyon oluşturulması backend constraint ile engellendi."
 
-**Kötü örnekler (BUNLARI YAPMA):**
-- "pdfGenerator.ts dosyasındaki generatePdf fonksiyonu refactor edildi." → Dosya adı ve fonksiyon adı kullanılmış
-- "deleteConfirmDialog component'i implement edildi." → Bileşen adı koda ait terim
-- "src/components/wizard altında değişiklikler yapıldı." → Dosya yolu
-- "useReservationStore hook'u güncellendi." → Hook adı kod detayı
-- "API endpoint'e yeni bir parametre eklendi: startDate." → Parametre adı kod detayı
-- "reservations tablosuna migration yazıldı." → Tablo adı veritabanı implementasyon detayı
-- "Button komponenti disabled prop aldı." → Prop adı kod detayı
-- "Redux slice güncellendi, action dispatcher eklendi." → Framework iç yapısı, kullanıcıya anlamsız
+**Bad Turkish examples (DO NOT DO):**
+- "pdfGenerator.ts dosyasındaki generatePdf fonksiyonu refactor edildi." → file/function name
+- "useReservationStore hook'u güncellendi." → hook name
+- "src/components/wizard altında değişiklikler yapıldı." → file path
 
-### Adım 7: Rapor Çıktısı
+#### Paragraph writing — English (`-en`)
 
-Toplanan bilgiler ve özet paragraflarla aşağıdaki şablonu **kod bloğu** içinde sun:
+For each group, write a concise, professional **and warm** English paragraph. Tone goal: a thoughtful senior engineer summarizing their day for a kind manager — clear, confident, never robotic, never marketing-y.
+
+- **Passive voice preferred:** "was rebuilt", "was added", "was resolved", "was tightened"
+- **Tell what was done,** not how
+- **Technical jargon is welcome:** cache invalidation, server-side pagination, constraint, migration, edge function, rollover, audit log, idempotency
+- **Forbidden:** function names, file names, variable names, file paths, framework internals (e.g. "the Redux slice", "the useFoo hook", "the FooButton component")
+- **2-4 sentences per paragraph**
+- **Forbidden punctuation/style:** em dashes `—`, semicolons `;`, name suffixes at the end of paragraphs, hype words ("seamlessly", "robust", "cutting-edge", "leverage")
+- **Tone:** professional and kind. Avoid passive-aggressive ("finally"), avoid bragging ("dramatically improved"), avoid corporate filler ("synergize"). Just clear, calm reporting.
+
+**Good English examples:**
+- "The reporting module was rebuilt. The PDF generation service now supports parametric data flow and a cache invalidation strategy, and timeout issues on large datasets were resolved."
+- "The subscription and credit management layer was extended. The plan editor was redesigned around card-based forms with monthly hours, extra credits, and rollover support, and the pricing engine now computes line-item totals."
+- "Two reservation bugs were fixed. Time slots outside business hours are now disabled, and creating reservations in the past is blocked at the database level via a backend constraint."
+
+**Bad English examples (DO NOT DO):**
+- "The generatePdf function in pdfGenerator.ts was refactored." → file/function name
+- "We seamlessly leveraged a robust caching layer to dramatically boost performance." → hype, marketing
+- "The useReservationStore hook was updated." → framework internal
+- "Finally fixed the timeout bug after weeks of pain." → tone
+
+### Step 7: Render the report
+
+Always render in this exact shape, inside a code block:
 
 ```
-{İsim} ({Tarih})
-{Şirket}:
+{Name} ({DD.MM.YY})
+{Company}:
 
-{Proje Adı}:
+{Project}:
+{paragraph 1}
 
-{Özet paragraf 1}
+{paragraph 2}
 
-{Özet paragraf 2}
-
-{Özet paragraf 3}
+{paragraph 3}
 ```
 
-**Format kuralları (KESİN):**
-- 1. satır: `{İsim} ({Tarih})` — tarih formatı `GG.AA.YY` (2 haneli yıl, örn: `30.04.26`)
-- 2. satır: `{Şirket}:` — boş satır YOK, hemen alta yazılır
-- 3. satır: boş
-- 4. satır: `{Proje Adı}:`
-- 5. satır: boş
-- 6. satırdan itibaren: paragraflar (aralarında birer boş satır)
-- Sonda `--` veya başka bir kapanış işareti YOK
-- Madde işareti veya numaralama YOK, düz paragraflar
-- Tamamı tek bir kod bloğu içinde, kullanıcı doğrudan kopyalayabilsin
+**Format rules (STRICT, identical across all flags):**
+- Line 1: `{Name} ({Date})` — date format `DD.MM.YY` (two-digit year, e.g. `30.04.26`)
+- Line 2: `{Company}:` — no blank line above
+- Line 3: blank
+- Line 4: `{Project}:`
+- Line 5: paragraph 1 — **NO blank line between project line and paragraph 1**
+- Subsequent paragraphs separated by exactly one blank line
+- No closing marker (no `--`, no horizontal rule)
+- No bullets, no numbered lists
+- Entire output wrapped in a single code block
 
-### Adım 8: Dosyaya Kaydetme Onayı
+### Step 8: Save prompt
 
-Rapor kod bloğu olarak gösterildikten sonra **AskUserQuestion** ile onay al:
+After rendering, ask via AskUserQuestion:
 
 **Question:** "Raporu ~/Desktop/rapor.md dosyasına kaydetmemi ister misin?"
 **Options:**
 1. "Evet, kaydet"
 2. "Hayır, sadece göster yeterli"
 
-**"Evet, kaydet" seçilirse:** Aşağıdaki "Dosya Kayıt Mantığı" bölümünü uygula.
-
-**"Hayır" seçilirse:** Hiçbir şey yapma, rapor zaten gösterildi.
-
----
-
-## Direkt Mod (`/rapor --direkt`)
-
-Kullanıcı `/rapor --direkt` yazdıysa bu modu çalıştır. Hiçbir soru sorma, hiçbir tercih kaydetme.
-
-### Direkt Mod Adımları
-
-1. **Git deposu kontrolü:**
-```bash
-git rev-parse --is-inside-work-tree
-```
-Git deposu değilse: **"Bu dizin bir git deposu değil."** mesajıyla durdur.
-
-2. **Tercih dosyasını oku:**
-```bash
-cat ~/.claude/rapor-preferences.json 2>/dev/null
-```
-Dosya yoksa veya `isim`, `sirket`, `projeAdi` alanlarından biri eksikse: **"Direkt mod için önce `/rapor` komutuyla en az bir kez interaktif çalıştırma yapılmalı."** mesajıyla durdur.
-
-3. **Bugünün commit'lerini çek:**
-```bash
-git log --after="YYYY-MM-DD 00:00" --before="YYYY-MM-DD 23:59" --oneline --no-merges
-```
-
-4. Commit bulunamazsa: **"Bugün henüz commit yapılmamış."** mesajıyla durdur.
-
-5. **Commit'leri analiz et ve gruplama yap** (bkz. Adım 6 — aynı kurallar geçerli, gruplama sınırı yok).
-
-6. **Raporu üret** (bkz. Adım 7 — aynı format, başlık dahil).
-
-7. **Doğrudan dosyaya kaydet** (aşağıdaki "Dosya Kayıt Mantığı" bölümünü uygula). **Soru sorma.**
-
-8. Kullanıcıya kısa bir bilgi mesajı göster: **"Rapor ~/Desktop/rapor.md dosyasına kaydedildi."**
+If "Evet, kaydet" → apply the **File Save Logic** below.
+If "Hayır" → done, the user can copy from the rendered code block.
 
 ---
 
-## Dosya Kayıt Mantığı
+## Direct Mode (`/report --direkt`)
 
-Hem interaktif modda kullanıcı "Evet, kaydet" derse hem de direkt modda otomatik olarak bu mantık uygulanır.
+When the user invokes `/report --direkt` (with or without a language flag), run this flow. Ask nothing, save no preferences.
 
-### Adımlar
+### Direct mode steps
 
-1. `~/Desktop/rapor.md` dosyasını oku (varsa Read tool ile, yoksa boş içerik kabul et).
+1. Git repo check (abort message in Turkish if not a git repo).
+2. Read preferences. If missing or incomplete, abort: **"Direkt mod için önce `/report` komutuyla en az bir kez interaktif çalıştırma yapılmalı."**
+3. Pull today's commits:
+   ```bash
+   git log --after="YYYY-MM-DD 00:00" --before="YYYY-MM-DD 23:59" --oneline --no-merges
+   ```
+4. If no commits: **"Bugün henüz commit yapılmamış."** Abort.
+5. Analyze and group (same rules as Step 6, **no grouping cap**).
+6. Render the report (same format as Step 7, in the language indicated by `-en` / `-tr` / default Turkish).
+7. **Auto-save** to `~/Desktop/rapor.md` using the **File Save Logic** below. Do not ask.
+8. Show: **"Rapor ~/Desktop/rapor.md dosyasına kaydedildi."**
 
-2. **Dosya yoksa veya boşsa:**
-   - Yeni dosyayı oluştur, raporun tamamını yaz (başlık + şirket + proje + paragraflar).
+---
 
-3. **Dosya varsa ve içeriği doluysa:**
-   - Mevcut içeriğin sonuna **bir boş satır + `--------` + bir boş satır** ekle.
-   - Ardından yeni raporun tamamını yaz (başlık + şirket + proje + paragraflar).
-   - **Aynı gün varsa içine ekleme YOK.** Her çalıştırma yeni bir rapor olarak `--------` ile ayrılır.
+## File Save Logic
 
-4. Write tool ile dosyayı güncelle.
+Both interactive ("Evet, kaydet") and `--direkt` modes use this logic.
 
-### Ayraç Formatı
+1. Read `~/Desktop/rapor.md` if it exists, otherwise treat as empty.
+2. **If file is missing or empty:** create it and write the full report (header + company + project + paragraphs).
+3. **If file exists and has content:**
+   - Append a blank line + `--------` + a blank line to the existing content.
+   - Then append the full new report.
+   - **No same-day merging.** Every run produces a new report block separated by `--------`.
+4. Write with the Write tool.
 
-Raporlar arası ayraç tam olarak **8 adet tire** ile yazılır:
+### Separator format
+
+Exactly **8 dashes**:
 ```
 --------
 ```
 
-### Örnek Dosya İçeriği (birden fazla rapor)
+### Example file with multiple reports
 
 ```
 John Doe (29.04.26)
 Acme Corp:
 
 Demo Project:
+The reporting module was rebuilt. The PDF generation service now supports parametric data flow and a cache invalidation strategy.
 
-İlk gün yapılan iş paragrafı.
-
-İkinci paragraf.
+Two reservation bugs were fixed. Time slots outside business hours are now disabled, and creating past-dated reservations is blocked via a backend constraint.
 
 --------
 
@@ -312,7 +306,6 @@ John Doe (30.04.26)
 Acme Corp:
 
 Demo Project:
-
 Bugün yapılan iş paragrafı.
 
 İkinci paragraf.
@@ -320,18 +313,19 @@ Bugün yapılan iş paragrafı.
 Üçüncü paragraf.
 ```
 
+(Mixing languages across days in the same file is fine — each run honors its own flag.)
+
 ---
 
-## Örnek Çıktı
+## Example Outputs
 
-Aşağıdaki örnek, beklenen rapor formatını gösterir:
+### Turkish (default)
 
 ```
 John Doe (30.04.26)
 Acme Corp:
 
 Demo Project:
-
 Raporlama modülü yeniden yapılandırıldı. PDF üretim servisine parametrik veri akışı, cache invalidation stratejisi ve hata toleranslı işleme mekanizması eklendi. Büyük veri setlerinde oluşan timeout problemleri optimize edildi.
 
 Abonelik ve kredi yönetimi altyapısı geliştirildi. Plan tanımlama ekranı yeniden tasarlanarak esnek hak tanımlama (aylık saat, ek kredi, rollover) desteği eklendi. Fiyatlandırma motoru kalem bazlı hesaplama yapacak şekilde revize edildi.
@@ -339,18 +333,33 @@ Abonelik ve kredi yönetimi altyapısı geliştirildi. Plan tanımlama ekranı y
 Talep listesi gelişmiş filtreleme, durum bazlı segmentasyon ve server-side pagination desteği ile yeniden kurgulandı. Detay ekranında oluşan tip uyuşmazlıkları ve veri senkronizasyon hataları giderildi.
 ```
 
+### English (`-en`)
+
+```
+John Doe (30.04.26)
+Acme Corp:
+
+Demo Project:
+The reporting module was rebuilt. The PDF generation service now supports parametric data flow, cache invalidation, and fault-tolerant processing, and timeout issues on large datasets were resolved.
+
+The subscription and credit management layer was extended. The plan editor was redesigned around card-based forms, with monthly hours, extra credits, and rollover support added, and the pricing engine was revised to compute line-item totals.
+
+The ticket list was reworked with advanced filtering, status-based segmentation, and server-side pagination. Type mismatches and data synchronization issues on the detail view were resolved.
+```
+
 ---
 
-## Özel Durumlar
+## Edge Cases
 
-| Durum | İşlem |
-|-------|-------|
-| Git deposu değil | "Bu dizin bir git deposu değil." mesajıyla durdur |
-| Commit bulunamadı | "Seçilen aralıkta hiçbir commit bulunamadı." mesajıyla durdur |
-| Direkt modda tercih dosyası yok/eksik | "Direkt mod için önce `/rapor` komutuyla en az bir kez interaktif çalıştırma yapılmalı." mesajıyla durdur |
-| Tek commit | Tek özet paragrafı oluştur |
-| Çok sayıda commit | Tematik gruplara böl, **paragraf sayısı sınırı yok** |
-| Merge commit'ler | `--no-merges` ile otomatik atla |
-| Binary dosya commit'leri | "Medya ve statik dosya güncellemeleri yapıldı" şeklinde özetle |
-| ~/Desktop/rapor.md yok | Yeni dosya oluştur |
-| ~/Desktop/rapor.md var ve dolu | `--------` ayracıyla ayır, devamına yeni rapor yaz |
+| Case | Action |
+|---|---|
+| Not a git repo | "Bu dizin bir git deposu değil." — abort |
+| No commits in range | "Seçilen aralıkta hiçbir commit bulunamadı." — abort |
+| `--direkt` with no/incomplete preferences | "Direkt mod için önce `/report` komutuyla en az bir kez interaktif çalıştırma yapılmalı." — abort |
+| Single commit | One paragraph |
+| Many commits | Many paragraphs — **no upper limit** |
+| Merge commits | Skipped via `--no-merges` |
+| Binary-only commits | Summarize as "Medya ve statik dosya güncellemeleri yapıldı" (TR) / "Media and static asset updates were applied" (EN) |
+| `~/Desktop/rapor.md` missing | Create it |
+| `~/Desktop/rapor.md` has content | Append after `--------` separator |
+| Unknown flag | Ignore silently and proceed with defaults |
